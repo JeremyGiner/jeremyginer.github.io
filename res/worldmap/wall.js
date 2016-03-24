@@ -9,16 +9,33 @@
 		"normals"       : 1,
 		"colors"        : 0,
 		"uvs"           : [4],
-		"materials"     : 0,
+		"materials"     : 1,
 		"morphTargets"  : 0,
 		"bones"         : 0
 	},
 
 	"scale" : 1.000000,
 
-	"materials" : [],
+	"materials" : [	{
+		"DbgColor" : 15658734,
+		"DbgIndex" : 0,
+		"DbgName" : "Material.001",
+		"blending" : "NormalBlending",
+		"colorAmbient" : [0.800000011920929, 0.800000011920929, 0.800000011920929],
+		"colorDiffuse" : [0.800000011920929, 0.800000011920929, 0.800000011920929],
+		"colorSpecular" : [0.0, 0.0, 0.0],
+		"depthTest" : true,
+		"depthWrite" : true,
+		"mapDiffuse" : "worldmap.png",
+		"mapDiffuseWrap" : ["repeat", "repeat"],
+		"shading" : "Lambert",
+		"specularCoef" : 50,
+		"transparency" : 1.0,
+		"transparent" : false,
+		"vertexColors" : false
+	}],
 
-	"vertices" : [0.5,0.5,0,0.5,-0.5,0,0.75,0.5,-0.500002,0.75,-0.5,-0.499998],
+	"vertices" : [0.5,0.5,0,0.5,-0.5,0,0.625,0.5,-0.250002,0.625,-0.5,-0.249998],
 
 	"morphTargets" : [],
 
@@ -28,7 +45,7 @@
 
 	"uvs" : [[0.999899,0.9999,0.0001,0.9999,0.0001,0.000102,0.999899,0.0001]],
 
-	"faces" : [41,0,1,3,2,0,1,2,3,0,0,0,0],
+	"faces" : [43,0,1,3,2,0,0,1,2,3,0,0,0,0],
 
 	"bones" : [],
 

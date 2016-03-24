@@ -408,7 +408,7 @@ cloner_Cloner.prototype = {
 			case 3:
 				return v;
 			case 4:
-				return v;
+				return this.handleAnonymous(v);
 			case 5:
 				return null;
 			case 6:
@@ -422,6 +422,18 @@ cloner_Cloner.prototype = {
 				return null;
 			}
 		}
+	}
+	,handleAnonymous: function(v) {
+		var properties = Reflect.fields(v);
+		var anonymous = { };
+		var _g1 = 0;
+		var _g = properties.length;
+		while(_g1 < _g) {
+			var i = _g1++;
+			var property = properties[i];
+			Reflect.setField(anonymous,property,this._clone(Reflect.getProperty(v,property)));
+		}
+		return anonymous;
 	}
 	,handleClass: function(c,inValue) {
 		var handle;
@@ -2692,13 +2704,6 @@ mygame_client_controller_game_GameControllerLocal.prototype = $extend(mygame_cli
 	,_game_process: function() {
 		if(this._bPaused) return;
 		this._oGame.loop();
-		var aAction = this._oNemesis.action_get();
-		var _g = 0;
-		while(_g < aAction.length) {
-			var oAction = aAction[_g];
-			++_g;
-			this._oGame.action_run(oAction);
-		}
 		var oWinner = this._oGame.winner_get();
 		if(oWinner == null) return;
 		this._oTimer.stop();
@@ -2989,26 +2994,12 @@ mygame_client_controller_game_UnitSelection.prototype = {
 		var oMapVisual = mygame_client_view_visual_EntityVisual.get_byEntity(this._oGameController.game_get().map_get());
 		return oMapVisual.tile_get_byVector(oVector);
 	}
-	,_unit_get: function(oMouse) {
-		var oVector = utils_three_Coordonate.canva_to_eye(oMouse.x_get(),oMouse.y_get(),this._oGameView.renderer_get());
-		var oRaycaster = new THREE.Raycaster();
-		oRaycaster.setFromCamera(oVector,this._oGameView.camera_get());
-		var _g = 0;
-		var _g1 = this._oGameView.unitVisual_get_all();
-		while(_g < _g1.length) {
-			var oUnitVisual = _g1[_g];
-			++_g;
-			var oGeometry = oUnitVisual.clickBox_get();
-			if(oGeometry == null) continue;
-			var aIntersect = oRaycaster.ray.intersectBox(oGeometry);
-			if(aIntersect != null) return oUnitVisual.unit_get();
-		}
-		return null;
-	}
 	,trigger: function(oSource) {
 		if(oSource == this._oMouse.onPressLeft) {
 			var oMouse = oSource.event_get();
-			var oUnit = this._unit_get(oMouse);
+			var oUnitVisual = mygame_client_view_visual_unit_UnitVisual.get_byRaycasting(oMouse.x_get(),oMouse.y_get(),this._oGameView);
+			if(oUnitVisual == null) return;
+			var oUnit = oUnitVisual.unit_get();
 			if(oUnit == null) return;
 			if(js_Boot.__instanceof(oUnit,mygame_game_entity_SubUnit)) oUnit = (js_Boot.__cast(oUnit , mygame_game_entity_SubUnit)).platoon_get();
 			var oUnitSelection = this._oModel.GUI_get().unitSelection_get();
@@ -3362,6 +3353,7 @@ var mygame_client_view_GameView = function(oModel) {
 	this._oGame = oModel.game_get();
 	this._oGUI = oModel.GUI_get();
 	this.onFrame = new trigger_eventdispatcher_EventDispatcher();
+	this._oOb3UpdaterManager = new ob3updater_Ob3UpdaterManager();
 	this._oTextureLoader = new THREE.TextureLoader();
 	this._moGeometry = new haxe_ds_StringMap();
 	this._aoMaterial = new haxe_ds_StringMap();
@@ -3378,22 +3370,10 @@ var mygame_client_view_GameView = function(oModel) {
 	this._oCamera.position.z = 50;
 	this._oCamera.position.y = -30;
 	this._oCamera.lookAt(new THREE.Vector3(0,0,0));
+	this._oOb3UpdaterManager.add(new ob3updater_Transistion(this._oCamera,100));
 	var oLightTmp = new THREE.DirectionalLight(16711122,1);
 	oLightTmp.position.set(-1,-1,5);
-	oLightTmp.castShadow = true;
-	oLightTmp.shadow.mapSize.width = 1024;
-	oLightTmp.shadow.mapSize.height = 1024;
-	oLightTmp.shadow.camera.near = 1;
-	oLightTmp.shadow.camera.far = 100;
-	oLightTmp.shadow.camera.bottom = -10;
-	oLightTmp.shadow.camera.top = 10;
-	oLightTmp.shadow.camera.left = -10;
-	oLightTmp.shadow.camera.right = 10;
-	oLightTmp.shadow.darkness = 0.5;
-	oLightTmp.shadow.camera.lookAt(new THREE.Vector3(5,5,0));
 	this._oScene.add(oLightTmp);
-	var oCamHelper = new THREE.CameraHelper(oLightTmp.shadow.camera);
-	this._oScene.add(oCamHelper);
 	var oLightTmp1 = new THREE.DirectionalLight(15724543,1.5);
 	oLightTmp1.position.set(-1,-1,-1).normalize();
 	this._oScene.add(oLightTmp1);
@@ -3407,6 +3387,7 @@ var mygame_client_view_GameView = function(oModel) {
 	this._oRenderer.autoClear = false;
 	var render_update = null;
 	render_update = function(f) {
+		_g._oOb3UpdaterManager.process();
 		_g.onFrame.dispatch(_g);
 		window.requestAnimationFrame(render_update);
 		_g._oRenderer.clear();
@@ -3468,6 +3449,7 @@ mygame_client_view_GameView.prototype = {
 			this._aUnitVisual.push(oVisual);
 			var oGuidance = oUnit.ability_get(mygame_game_ability_Guidance);
 			if(oGuidance != null) new mygame_client_view_visual_ability_GuidanceVisual(this,oUnit.ability_get(mygame_game_ability_Guidance));
+			if(js_Boot.__instanceof(oEntity,mygame_game_entity_Tank) && oEntity.identity_get() == 11) this._oOb3UpdaterManager.add(new ob3updater_Transistion(oVisual.object3d_get(),45));
 			return oVisual;
 		}
 		return null;
@@ -3526,6 +3508,9 @@ mygame_client_view_GameView.prototype = {
 	}
 	,unitVisual_get_all: function() {
 		return this._aUnitVisual;
+	}
+	,ob3UpdaterManager_get: function() {
+		return this._oOb3UpdaterManager;
 	}
 	,geometry_add: function(oGeometry,sKey) {
 		this._moGeometry.set(sKey,oGeometry);
@@ -3603,7 +3588,7 @@ mygame_client_view_GameView.prototype = {
 		oTextureTmp.magFilter = THREE.NearestFilter;
 		oTextureTmp.minFilter = THREE.NearestFilter;
 		oTextureTmp.repeat.set(0.25,0.25);
-		oTextureTmp.offset.set(0.5009765625,0.2509765625);
+		oTextureTmp.offset.set(0.5,0.25);
 		oTextureTmp.needsUpdate = true;
 		this._aoMaterial.set("tile_slope",new THREE.MeshLambertMaterial({ map : oTextureTmp}));
 		oTextureTmp = this._oTextureLoader.load("res/texture/worldmap.png");
@@ -3681,6 +3666,7 @@ mygame_client_view_GameView.prototype = {
 		this._aoMaterial.set("factory",new THREE.MeshLambertMaterial({ map : oTextureTmp5, transparent : true, alphaTest : 0.1}));
 		this._aoMaterial.set("wireframe",new THREE.MeshBasicMaterial({ wireframe : true, color : 16777215, wireframeLinewidth : 5, shading : THREE.NoShading}));
 		this._aoMaterial.set("gui_guidancePreview",new THREE.MeshBasicMaterial({ color : 65535, wireframe : true, shading : THREE.NoShading}));
+		this._aoMaterial.set("gui_guidancePreviewLine",new THREE.LineBasicMaterial({ color : 65535}));
 		this._aPlayerColor[0] = new THREE.Color("white");
 		this._aPlayerColor[1] = new THREE.Color("blue");
 		this._aPlayerColor[2] = new THREE.Color("orange");
@@ -3811,6 +3797,55 @@ mygame_client_view_View.prototype = {
 	}
 	,__class__: mygame_client_view_View
 };
+var ob3updater_IOb3Updater = function() { };
+$hxClasses["ob3updater.IOb3Updater"] = ob3updater_IOb3Updater;
+ob3updater_IOb3Updater.__name__ = ["ob3updater","IOb3Updater"];
+ob3updater_IOb3Updater.prototype = {
+	__class__: ob3updater_IOb3Updater
+};
+var mygame_client_view_ob3updater_Follow = function(oGameView,oObject3D,oObject3DFollowed) {
+	this._oObject3D = oObject3D;
+	this._oObject3D.matrixAutoUpdate = false;
+	this._oObject3DFollowed = oObject3DFollowed;
+	this._oGameView = oGameView;
+};
+$hxClasses["mygame.client.view.ob3updater.Follow"] = mygame_client_view_ob3updater_Follow;
+mygame_client_view_ob3updater_Follow.__name__ = ["mygame","client","view","ob3updater","Follow"];
+mygame_client_view_ob3updater_Follow.__interfaces__ = [ob3updater_IOb3Updater];
+mygame_client_view_ob3updater_Follow.prototype = {
+	object3d_get: function() {
+		return this._oObject3D;
+	}
+	,gameView_get: function() {
+		return this._oGameView;
+	}
+	,update: function() {
+		var oMatrix = this._orthoproject(this._oObject3DFollowed);
+		var v = new THREE.Vector3(0,0);
+		var vDelta = new THREE.Vector3(1,1);
+		v.applyProjection(oMatrix);
+		vDelta.applyProjection(oMatrix);
+		var oMatrixUpdated = new THREE.Matrix4();
+		oMatrixUpdated.compose(new THREE.Vector3(v.x,v.y,0),new THREE.Quaternion(),new THREE.Vector3(vDelta.x - v.x,Math.max(Math.min(vDelta.y - v.y,0.01),0.002),1));
+		this._oObject3D.matrix = oMatrixUpdated;
+		this._oObject3D.matrixWorldNeedsUpdate = true;
+	}
+	,_orthoproject: function(oObj) {
+		var oCamera = this.gameView_get().camera_get();
+		var oCameraOrtho = this.gameView_get().cameraOrtho_get();
+		var up = oObj;
+		while(up.parent != null && up.parent.matrixWorldNeedsUpdate == true) up = up.parent;
+		up.updateMatrixWorld(true);
+		var oObjMatrixWorld = oObj.matrixWorld;
+		oCamera.updateMatrixWorld(true);
+		oCamera.matrixWorldInverse.getInverse(oCamera.matrixWorld);
+		var oMatrix = new THREE.Matrix4();
+		oMatrix.multiplyMatrices(oCamera.matrixWorldInverse,oObjMatrixWorld);
+		oMatrix.multiplyMatrices(oCamera.projectionMatrix,oMatrix);
+		return oMatrix;
+	}
+	,__class__: mygame_client_view_ob3updater_Follow
+};
 var mygame_client_view_visual_IVisual = function() { };
 $hxClasses["mygame.client.view.visual.IVisual"] = mygame_client_view_visual_IVisual;
 mygame_client_view_visual_IVisual.__name__ = ["mygame","client","view","visual","IVisual"];
@@ -3874,7 +3909,7 @@ var mygame_client_view_visual_MapVisual = function(oDisplayer,oMap) {
 			var j = _g3++;
 			oTileTmp = this._oMap.tile_get(i,j);
 			var oMesh = new THREE.Mesh(this.geometry_get_byTile(oTileTmp),this.material_get_byTile(oTileTmp));
-			oMesh.position.set(i + 0.5,j + 0.5,oTileTmp.z_get() / 4);
+			oMesh.position.set(i + 0.5,j + 0.5,oTileTmp.z_get() / 8);
 			oMesh.receiveShadow = true;
 			oMesh.castShadow = true;
 			this._oScene.add(oMesh);
@@ -3968,10 +4003,10 @@ mygame_client_view_visual_MapVisual.prototype = $extend(mygame_client_view_visua
 			y %= 1;
 			var xd = x - 0.5;
 			var yd = y - 0.5;
-			return 0.5 + Math.max(0,0.5 - Math.sqrt(xd * xd + yd * yd));
+			return 0.25 + Math.max(0,0.5 - Math.sqrt(xd * xd + yd * yd));
 		}
 		if(this._oEntity.game_get().query_get(mygame_game_query_CityTile).data_get(oTile).length != 0) return 1;
-		return 0.5;
+		return 0.25;
 	}
 	,update: function() {
 	}
@@ -4044,15 +4079,16 @@ var mygame_client_view_visual_UnitSelection = function(oGameView,oModel) {
 	this._loVisual = new List();
 	this._update_circle();
 	this._oUnitVisualSelectionPreview = null;
-	this._oGuidancePreview = new THREE.Mesh(this._oGameView.geometry_get("gui_guidancePreview"),this._oGameView.material_get("gui_guidancePreview"));
 	this._bUpdateNeeded = false;
+	this._oGuidancePreview = new THREE.Mesh(this._oGameView.geometry_get("gui_guidancePreview"),this._oGameView.material_get("gui_guidancePreview"));
 	this._oGuidancePreview.position.set(0,0,0);
 	this._oGuidancePreview.receiveShadow = true;
+	this._oGuidancePreview.visible = false;
 	oGameView.scene_get().add(this._oGuidancePreview);
 	var oGeometry = new THREE.Geometry();
 	oGeometry.vertices.push(new THREE.Vector3(0,0,0));
-	oGeometry.vertices.push(new THREE.Vector3(0,1,0));
-	this._oGuidancePreviewLine = new THREE.Line(oGeometry,this._oGameView.material_get("gui_guidancePreview"));
+	oGeometry.vertices.push(new THREE.Vector3(-10,-10,0));
+	this._oGuidancePreviewLine = new THREE.Line(oGeometry,this._oGameView.material_get("gui_guidancePreviewLine"));
 	oGameView.scene_get().add(this._oGuidancePreviewLine);
 	this._oSelection.onUpdate.attach(this);
 	this._oModel.mouse_get().onMove.attach(this);
@@ -4148,15 +4184,10 @@ mygame_client_view_visual_UnitSelection.prototype = {
 		var oGeometry = new THREE.Geometry();
 		oGeometry.vertices.push(new THREE.Vector3(oVector.x,oVector.y,0.5));
 		oGeometry.vertices.push(new THREE.Vector3(oPosition.x,oPosition.y,0.5));
-		this._oGuidancePreviewLine = new THREE.Line(oGeometry,this._oGameView.material_get("gui_guidancePreview"));
+		this._oGuidancePreviewLine = new THREE.Line(oGeometry,this._oGameView.material_get("gui_guidancePreviewLine"));
 		scene.add(this._oGuidancePreviewLine);
 		this._oGuidancePreview.visible = true;
 		this._oGuidancePreviewLine.visible = true;
-	}
-	,_selectionHint_update: function(x,y) {
-		if(this._oUnitVisualSelectionPreview != null) this._oUnitVisualSelectionPreview.selectionPreview_set(false);
-		this._oUnitVisualSelectionPreview = mygame_client_view_visual_unit_UnitVisual.get_byRaycasting(x,y,this._oGameView);
-		if(this._oUnitVisualSelectionPreview != null) this._oUnitVisualSelectionPreview.selectionPreview_set(true);
 	}
 	,trigger: function(oSource) {
 		if(oSource == this._oSelection.onUpdate) this._update_circle();
@@ -4188,9 +4219,9 @@ mygame_client_view_visual_ability_GuidanceVisual.prototype = {
 		var geometry = new THREE.Geometry();
 		var destination = this._oGuidance.goal_get();
 		if(destination != null) {
-			var position = this._oGuidance.mobility_get().position_get();
-			geometry.vertices.push(new THREE.Vector3(destination.x,destination.y,5100));
-			geometry.vertices.push(new THREE.Vector3(position.x,position.y,5100));
+			var oPosition = this._oGuidance.mobility_get().position_get();
+			geometry.vertices.push(new THREE.Vector3(mygame_game_ability_Position.metric_unit_to_map(destination.x),mygame_game_ability_Position.metric_unit_to_map(destination.y),0.51));
+			geometry.vertices.push(new THREE.Vector3(mygame_game_ability_Position.metric_unit_to_map(oPosition.x),mygame_game_ability_Position.metric_unit_to_map(oPosition.y),0.51));
 		}
 		var scene = this._oLine.parent;
 		scene.remove(this._oLine);
@@ -4250,7 +4281,7 @@ mygame_client_view_visual_ability_WeaponVisual.prototype = $extend(mygame_client
 				var geometry = new THREE.Geometry();
 				geometry.vertices.push(new THREE.Vector3(0,0.1,0));
 				geometry.vertices.push(new THREE.Vector3(0,0,0));
-				this._oLine = new THREE.Line(geometry,mygame_client_view_visual_ability_WeaponVisual._oMaterial,THREE.LineMode.LinePieces);
+				this._oLine = new THREE.Line(geometry,mygame_client_view_visual_ability_WeaponVisual._oMaterial);
 				this._oUnitVisual.object3d_get().add(this._oLine);
 			}
 		} else if(this._oAbility.target_get() == null && this._oLine != null) {
@@ -4552,11 +4583,8 @@ var mygame_client_view_visual_unit_UnitVisual = function(oGameView,oUnit,fSelect
 	this._oClickBox = null;
 	this._aGauge = [];
 	this._oScene = new THREE.Group();
-	this._oScene.position.setZ(0.5);
+	this._oScene.position.setZ(0.25);
 	this._oWeaponRange = null;
-	this._oGaugeHolder = new THREE.Object3D();
-	this._oGameView.sceneOrtho_get().add(this._oGaugeHolder);
-	this.onUpdateEnd = new trigger_eventdispatcher_EventDispatcher();
 	mygame_client_view_visual_EntityVisual.call(this,this._oUnit);
 	this._oSelection = new THREE.Mesh(this._oGameView.geometry_get("gui_selection_circle"),this._oGameView.material_get("wireframe_white"));
 	this._oSelection.scale.set(this._fSelectionScale,this._fSelectionScale,this._fSelectionScale);
@@ -4574,6 +4602,10 @@ var mygame_client_view_visual_unit_UnitVisual = function(oGameView,oUnit,fSelect
 	this._oScene.add(this._oInfoAnchor);
 	this._info_update();
 	this._oGameView.scene_get().add(this.object3d_get());
+	this._oGaugeHolder = new THREE.Object3D();
+	this._oGameView.sceneOrtho_get().add(this._oGaugeHolder);
+	this._oGameView.ob3UpdaterManager_get().add(new mygame_client_view_ob3updater_Follow(this._oGameView,this._oGaugeHolder,this._oInfoAnchor));
+	this.onUpdateEnd = new trigger_eventdispatcher_EventDispatcher();
 	var $it0 = this._oUnit.abilityMap_get().iterator();
 	while( $it0.hasNext() ) {
 		var oAbility = $it0.next();
@@ -4604,19 +4636,18 @@ var mygame_client_view_visual_unit_UnitVisual = function(oGameView,oUnit,fSelect
 $hxClasses["mygame.client.view.visual.unit.UnitVisual"] = mygame_client_view_visual_unit_UnitVisual;
 mygame_client_view_visual_unit_UnitVisual.__name__ = ["mygame","client","view","visual","unit","UnitVisual"];
 mygame_client_view_visual_unit_UnitVisual.get_byRaycasting = function(x,y,oGameView) {
-	var oVector = new THREE.Vector3(x / oGameView.renderer_get().domElement.clientWidth * 2 - 1,1 - y / oGameView.renderer_get().domElement.clientHeight * 2,0.5);
-	var oCamera = oGameView.camera_get();
-	var oMatrix = new THREE.Matrix4();
-	oMatrix.multiplyMatrices(oCamera.matrixWorld,oMatrix.getInverse(oCamera.projectionMatrix));
-	oVector.applyProjection(oMatrix);
-	var oRaycaster = new THREE.Raycaster(oCamera.position,oVector.sub(oCamera.position).normalize());
-	var $it0 = mygame_client_view_visual_EntityVisual.get_all().iterator();
-	while( $it0.hasNext() ) {
-		var oEntityVisual = $it0.next();
-		if(!js_Boot.__instanceof(oEntityVisual,mygame_client_view_visual_unit_UnitVisual)) continue;
-		if(oEntityVisual.object3d_get() == null) continue;
-		var aIntersect = oRaycaster.intersectObject(oEntityVisual.object3d_get(),true);
-		if(aIntersect.length > 0) return oEntityVisual;
+	var oVector = utils_three_Coordonate.canva_to_eye(x,y,oGameView.renderer_get());
+	var oRaycaster = new THREE.Raycaster();
+	oRaycaster.setFromCamera(oVector,oGameView.camera_get());
+	var _g = 0;
+	var _g1 = oGameView.unitVisual_get_all();
+	while(_g < _g1.length) {
+		var oUnitVisual = _g1[_g];
+		++_g;
+		var oGeometry = oUnitVisual.clickBox_get();
+		if(oGeometry == null) continue;
+		var aIntersect = oRaycaster.ray.intersectBox(oGeometry);
+		if(aIntersect != null) return oUnitVisual;
 	}
 	return null;
 };
@@ -4641,6 +4672,7 @@ mygame_client_view_visual_unit_UnitVisual.prototype = $extend(mygame_client_view
 		return this._oGaugeHolder;
 	}
 	,clickBox_get: function() {
+		if(this.unit_get() == null) return null;
 		if(this._oClickBox == null && this._oScene.children.length > 1) this._clickBox_update();
 		return this._oClickBox;
 	}
@@ -4652,7 +4684,6 @@ mygame_client_view_visual_unit_UnitVisual.prototype = $extend(mygame_client_view
 			this._oScene.position.setZ(oMapVisual.height_get(this._oPosition.x,this._oPosition.y));
 			this._oScene.updateMatrix();
 		}
-		this._gaugeHolder_update();
 		this.onUpdateEnd.dispatch(this);
 	}
 	,selection_set: function(bSelection) {
@@ -4668,23 +4699,10 @@ mygame_client_view_visual_unit_UnitVisual.prototype = $extend(mygame_client_view
 		var oObj = this._oScene.children[this._oScene.children.length - 1];
 		this._oClickBox = new THREE.Box3();
 		this._oClickBox.setFromObject(oObj);
-		var o = new THREE.BoundingBoxHelper(oObj);
-		o.box = this._oClickBox;
-		this._oGameView.scene_get().add(o);
 	}
 	,_position_update: function() {
 		this._oScene.position.setX(this._oPosition.x / 10000);
 		this._oScene.position.setY(this._oPosition.y / 10000);
-	}
-	,_gaugeHolder_update: function() {
-		var oMatrix = this._orthoproject(this._oInfoAnchor);
-		var v = new THREE.Vector3(0,0);
-		var vDelta = new THREE.Vector3(1,1);
-		v.applyProjection(oMatrix);
-		vDelta.applyProjection(oMatrix);
-		this._oGaugeHolder.scale.setX(vDelta.x - v.x);
-		this._oGaugeHolder.scale.setY(Math.max(Math.min(vDelta.y - v.y,0.01),0.002));
-		this._oGaugeHolder.position.set(v.x,v.y,0);
 	}
 	,_playerColoredMesh_createAdd: function(oParent,bFlat) {
 		if(bFlat == null) bFlat = false;
@@ -4697,21 +4715,6 @@ mygame_client_view_visual_unit_UnitVisual.prototype = $extend(mygame_client_view
 	}
 	,_info_update: function() {
 		this._oInfoAnchor.updateMatrix();
-	}
-	,_orthoproject: function(oObj) {
-		var oCamera = this.gameView_get().camera_get();
-		var oCameraOrtho = this.gameView_get().cameraOrtho_get();
-		oCameraOrtho.updateProjectionMatrix();
-		var up = oObj;
-		while(up.parent != null && up.parent.matrixWorldNeedsUpdate == true) up = up.parent;
-		up.updateMatrixWorld(true);
-		var oObjMatrixWorld = oObj.matrixWorld;
-		oCamera.updateMatrixWorld(true);
-		oCamera.matrixWorldInverse.getInverse(oCamera.matrixWorld);
-		var oMatrix = new THREE.Matrix4();
-		oMatrix.multiplyMatrices(oCamera.matrixWorldInverse,oObjMatrixWorld);
-		oMatrix.multiplyMatrices(oCamera.projectionMatrix,oMatrix);
-		return oMatrix;
 	}
 	,trigger: function(oSource) {
 		if(oSource == this._oUnit.mygame_get().onLoopEnd) {
@@ -4783,7 +4786,6 @@ mygame_client_view_visual_unit_CityVisual.prototype = $extend(mygame_client_view
 		(js_Boot.__cast(this._oMesh.material , THREE.MeshFaceMaterial)).materials[1] = this._oGameView.material_get_byPlayer("player_flat",this.unit_get().owner_get());
 	}
 	,update: function() {
-		this._gaugeHolder_update();
 		return;
 	}
 	,trigger: function(oSource) {
@@ -5518,7 +5520,7 @@ mygame_game_ability_Guidance.prototype = $extend(mygame_game_ability_UnitAbility
 		var v2 = null;
 		if(oTileTargeted == oTileTargetedRef) v2 = new space_Vector2i(this._oGoal.x - this._oMobility.position_get().x,this._oGoal.y - this._oMobility.position_get().y); else v2 = new space_Vector2i(oTileTargetedRef.x_get() * 10000 + 5000 - this._oMobility.position_get().x,oTileTargetedRef.y_get() * 10000 + 5000 - this._oMobility.position_get().y);
 		var fV2Length = v2.length_get();
-		var fProjMult = v1.dotProduct(v2) / fV2Length * fV2Length;
+		var fProjMult = v1.dotProduct(v2) / (fV2Length * fV2Length);
 		var v3;
 		if(fProjMult > 0) v3 = v2.clone().mult(fProjMult); else v3 = v2.clone();
 		v3.add(this._oMobility.position_get().x,this._oMobility.position_get().y);
@@ -5930,8 +5932,10 @@ mygame_game_ability_Mobility.prototype = $extend(mygame_game_ability_UnitAbility
 		}
 		if(this._oVelocity.x == 0 && this._oVelocity.y == 0) return;
 		var oVectorOrientation = null;
-		if(this._moForce.get("Guidance") != null) oVectorOrientation = this._moForce.get("Guidance").oVector.clone();
-		this._orientation_update(oVectorOrientation);
+		if(this._moForce.get("Guidance") != null) {
+			oVectorOrientation = this._moForce.get("Guidance").oVector.clone();
+			this._orientation_update(oVectorOrientation);
+		}
 		this._collision_process();
 		this._position_set(this._oVelocity.x + this._oPosition.x,this._oVelocity.y + this._oPosition.y);
 	}
@@ -5947,7 +5951,9 @@ mygame_game_ability_Mobility.prototype = $extend(mygame_game_ability_UnitAbility
 	}
 	,_orientation_update: function(oDirection) {
 		if(oDirection == null) return;
-		var fGoal = this.clampAngle(oDirection.angleAxisXY());
+		var fGoal = oDirection.angleAxisXY();
+		if(fGoal == null) return;
+		fGoal = this.clampAngle(fGoal);
 		if(this._fOrientation != fGoal) {
 			var fDelta = fGoal - this._fOrientation;
 			if(fDelta == 0) this._fOrientation = fGoal; else {
@@ -6250,9 +6256,7 @@ mygame_game_ability_Volume.prototype = $extend(mygame_game_ability_UnitAbility.p
 		return loTile;
 	}
 	,tileListProject_get: function(x,y) {
-		var oHitBox = cloner_Cloner.STclone(this._oHitBox);
-		oHitBox.center_get().x = x;
-		oHitBox.center_get().y = y;
+		var oHitBox = new space_AlignedAxisBox2i(this._oHitBox.halfWidth_get(),this._oHitBox.halfHeight_get(),new space_Vector2i(x,y));
 		var loTile = this._oPosition.map_get().tileList_get_byArea(Math.floor(oHitBox.left_get() / 10000),Math.floor(oHitBox.right_get() / 10000),Math.floor(oHitBox.bottom_get() / 10000),Math.floor(oHitBox.top_get() / 10000));
 		return loTile;
 	}
@@ -7958,6 +7962,88 @@ mygame_server_model_Room.prototype = {
 	}
 	,__class__: mygame_server_model_Room
 };
+var ob3updater_Ob3UpdaterManager = function() {
+	this._aOb3Updater = new haxe_ds_IntMap();
+};
+$hxClasses["ob3updater.Ob3UpdaterManager"] = ob3updater_Ob3UpdaterManager;
+ob3updater_Ob3UpdaterManager.__name__ = ["ob3updater","Ob3UpdaterManager"];
+ob3updater_Ob3UpdaterManager.prototype = {
+	add: function(oOb3Updater) {
+		this._aOb3Updater.set(oOb3Updater.object3d_get().id,oOb3Updater);
+	}
+	,process: function() {
+		var $it0 = this._aOb3Updater.iterator();
+		while( $it0.hasNext() ) {
+			var oOb3Updater = $it0.next();
+			oOb3Updater.update();
+		}
+	}
+	,__class__: ob3updater_Ob3UpdaterManager
+};
+var ob3updater_Transistion = function(oObject3D,iDuration) {
+	this._iTimeAlpha = null;
+	this._oTimingFunction = ob3updater_Transistion.timeFuncLinear;
+	this._oObject3D = oObject3D;
+	this._oObject3D.matrixAutoUpdate = false;
+	this._oObject3D.updateMatrix();
+	this._iDuration = iDuration;
+	this._setup(this._oObject3D.matrix);
+};
+$hxClasses["ob3updater.Transistion"] = ob3updater_Transistion;
+ob3updater_Transistion.__name__ = ["ob3updater","Transistion"];
+ob3updater_Transistion.__interfaces__ = [ob3updater_IOb3Updater];
+ob3updater_Transistion.timeFuncLinear = function(f) {
+	return f;
+};
+ob3updater_Transistion.prototype = {
+	object3d_get: function() {
+		return this._oObject3D;
+	}
+	,update: function() {
+		var oMatrixOmegaNew = new THREE.Matrix4();
+		oMatrixOmegaNew.compose(this._oObject3D.position,this._oObject3D.quaternion,this._oObject3D.scale);
+		if(oMatrixOmegaNew.equals(this._oObject3D.matrix)) {
+			this._iTimeAlpha = null;
+			return;
+		}
+		if(this._iTimeAlpha == null || !oMatrixOmegaNew.equals(this._oMatrixOmega)) this._setup(oMatrixOmegaNew);
+		var oMatrixUpdated = this._oMatrixAlpha.clone();
+		var fTimePercent = Math.min(1,this._timeIntervalPercent_get());
+		var fMult = this._oTimingFunction(fTimePercent);
+		var _g1 = 0;
+		var _g = this._oMatrixDelta.elements.length;
+		while(_g1 < _g) {
+			var i = _g1++;
+			oMatrixUpdated.elements[i] = this._oMatrixAlpha.elements[i] + this._oMatrixDelta.elements[i] * fMult;
+		}
+		this._oObject3D.matrix = oMatrixUpdated;
+		this._oObject3D.matrixWorldNeedsUpdate = true;
+		if(fTimePercent >= 1) {
+			this._iTimeAlpha = null;
+			this._oObject3D.matrix = this._oMatrixOmega;
+			return;
+		}
+	}
+	,_setup: function(oMatrixOmega) {
+		this._oMatrixOmega = oMatrixOmega;
+		this._iTimeAlpha = Math.floor(this._timeCurrent_get());
+		this._oMatrixAlpha = this._oObject3D.matrix;
+		this._oMatrixDelta = this._oMatrixOmega.clone();
+		var _g1 = 0;
+		var _g = this._oMatrixDelta.elements.length;
+		while(_g1 < _g) {
+			var i = _g1++;
+			this._oMatrixDelta.elements[i] = this._oMatrixDelta.elements[i] - this._oMatrixAlpha.elements[i];
+		}
+	}
+	,_timeCurrent_get: function() {
+		return new Date().getTime();
+	}
+	,_timeIntervalPercent_get: function() {
+		return (this._timeCurrent_get() - this._iTimeAlpha) / this._iDuration;
+	}
+	,__class__: ob3updater_Transistion
+};
 var space_AlignedAxisBox = function(fHalfWidth,fHalfHeight,oPosition) {
 	this._fHalfWidth = fHalfWidth;
 	this._fHalfHeight = fHalfHeight;
@@ -8021,10 +8107,10 @@ space_AlignedAxisBox2i.prototype = {
 		return this._fHalfWidth * 2;
 	}
 	,height_get: function() {
-		return this._fHalfHeight;
+		return this._fHalfHeight * 2;
 	}
 	,halfHeight_get: function() {
-		return this._fHalfHeight * 2;
+		return this._fHalfHeight;
 	}
 	,top_get: function() {
 		return this._oPosition.y + this._fHalfHeight;
@@ -9406,7 +9492,8 @@ mygame_client_controller_game_StrategicZoom._fMax = 50;
 mygame_client_controller_game_StrategicZoom._fStepQuant = 10;
 mygame_client_view_GameView.WORLDMAP_MESHSIZE = 10;
 mygame_client_view_visual_EntityVisual._moEntityVisual = mygame_client_view_visual_EntityVisual._moEntityVisual = new haxe_ds_IntMap();
-mygame_client_view_visual_ability_GuidanceVisual._oMaterial = new THREE.LineDashedMaterial({ color : 255, dashSize : 3, gapSize : 1});
+mygame_client_view_visual_MapVisual.LANDHEIGHT = 0.25;
+mygame_client_view_visual_ability_GuidanceVisual._oMaterial = new THREE.LineBasicMaterial({ color : 255});
 mygame_client_view_visual_ability_WeaponVisual._oMatBackground = new THREE.SpriteMaterial({ color : 0, depthTest : false, depthWrite : false});
 mygame_client_view_visual_ability_WeaponVisual._oMatForeground = new THREE.SpriteMaterial({ color : 16733525, depthTest : false, depthWrite : false});
 mygame_client_view_visual_ability_WeaponVisual._oMaterial = new THREE.LineBasicMaterial({ color : 16711680});
