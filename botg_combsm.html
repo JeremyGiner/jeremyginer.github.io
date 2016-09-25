@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>BotG combat sim</title>
+	<!-- Latest compiled and minified CSS -->
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+	<style>
+		#combat {
+			font-size: 0.8em;
+		}
+		#combat.table > tbody > tr > td, 
+		#combat.table > tbody > tr > th, 
+		#combat.table > tfoot > tr > td, 
+		#combat.table > tfoot > tr > th, 
+		#combat.table > thead > tr > td, 
+		#combat.table > thead > tr > th {
+			padding: 3px;
+		}
+		
+		.table-striped > tbody > tr.highlight:nth-of-type(2n+1) {
+			background-color: #cbf5f0;
+		}
+		.table-striped > tbody > tr.highlight:nth-of-type(2n) {
+			background-color: #e6fffb;
+		}
+	</style>
+</head>
+<body>
+<header class="container">
+	<h1>BOTG combat simulator</h1>
+</header>
+<section class="container">
+<div class="row">
+	<div class="col-xs-6">
+		<h3>Attacker</h3>
+		<div class="form-horizontal">
+			<div class="form-group">
+				<div class="col-xs-10">
+					<select id="attacker_select" class="js-select-unittype form-control"></select>
+				</div>
+				<div class="col-xs-2">
+					<button class="btn btn-default" type="button" data-action="unitlist_add" data-unitlist-type="attacker">Add</button>
+				</div>
+			</div>
+		</div>
+		<ul id="attacker" class="list-group"></ul>
+	</div>
+	<div class="col-xs-6">
+		<h3>Defender</h3>
+		<div class="form-horizontal">
+			<div class=" form-group">
+				<div class="col-xs-10">
+					<select id="defender_select" class="js-select-unittype form-control"></select>
+				</div>
+				<div class="col-xs-2">
+					<button class="btn btn-default" type="button" data-action="unitlist_add" data-unitlist-type="defender">Add</button>
+				</div>
+			</div>
+		</div>
+		<ul id="defender" class="list-group"></ul>
+	</div>
+	<div class="col-xs-12">
+		<div class="form-horizontal form-group">
+			<label class="col-xs-2 control-label" for="control-turn">Turn</label>
+			<div class="col-xs-10">
+				<input id="control-turn" class="form-control" type="number" value="1" min="1"/>
+			</div>
+		</div>
+	</div>
+	<div id="combat-result" class="col-xs-12"></div>
+</div>
+</section>
+
+<section class="container" style="overflow:hidden;">
+<table id="combat" class="table table-striped">
+<thead>
+</thead>
+<tbody>
+</tbody>
+</table>
+</section>
+	
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+<!-- Latest compiled and minified JavaScript -->
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+<script>
+
+var Unit = function( iTypeId, iLevel, iLife ) {
+	this.type = iTypeId;
+	this.level = iLevel;
+	this.life = iLife;
+};
+Unit.prototype = {
+	getLvlMult: function() {
+		return aUnitType[this.type].lvlMult[this.level];
+	}
+}
+//_____________________________________________________________________________
+//	Global
+
+var aAttacker = [
+	new Unit(1,7,1.0),
+	new Unit(1,7,1.0),
+	new Unit(1,7,1.0),
+	
+	new Unit(2,5,1.0),
+	new Unit(2,5,1.0),
+	new Unit(2,6,1.0),
+	new Unit(2,6,1.0),
+	
+	new Unit(4,4,1.0),
+	new Unit(4,3,1.0),
+];
+var aDefender = [
+	new Unit(4,3,1.0),
+	new Unit(8,3,1.0),
+	new Unit(9,3,1.0),
+	new Unit(21,3,1.0),
+	new Unit(23,10,1.0),
+];
+var iTurn = 1;
+
+
+//_____________________________________________________________________________
+//	Utils
+
+function pad( s ) {
+	return (s.length == 2) ? s: '0'+s;
+}
+function combatTableColor(i) {
+	//var i = parseInt( $(this).html() );
+
+    if( isNaN(i) || i == 0 )
+		return '000000';
+	
+	var p = i/100;
+	
+	var R = Math.round(Math.min(255,Math.max(0,(255 * p * 2 )) ));
+	var G = Math.round(Math.min(255,Math.max(0,(255 * (1 - p*2+1))) ));
+	var B = 0;
+	return pad(R.toString(16))+pad(G.toString(16))+pad(B.toString(16));
+}
+//_____________________________________________________________________________
+// Global
+function format( sName, iMove, iSize, iHit, iCost, iPerT, iCargo, iHang, iCTurn, aLevelMultiplier ) {
+	return {
+		name: sName,
+		move: iMove,
+		size: iSize,
+		hit: iHit,
+		cost: iCost,
+		pert: iPerT,
+		cargo: iCargo,
+		hang: iHang,
+		cturn: iCTurn,
+		lvlMult: aLevelMultiplier,
+	};
+}
+var aLevelMultRamp = [null,1,2,3,4,5,6,7,8,9,10];
+var aLMExpo = [null,1,2,5,8,10,15,25,50,75,100];
+var aUnitType = [
+	format('Transport',3,1,100,20000 ,20 ,500,null,20,aLMExpo),
+	format('Infantry',1,1,100,50000 ,40 ,20,null,20,aLMExpo),
+	format('Comando',1,1,100,60000 ,50 ,null,null,24,aLMExpo),
+	format('Mechanized',3,1,150,70000 ,70 ,100,null,32,aLMExpo),
+	format('Armored',2,2,250,300000 ,300 ,null,null,40,aLMExpo),
+	format('Battlesuit',2,1,200,350000 ,350 ,null,null,48,aLMExpo),
+	format('Artillery',2,1,100,400000 ,400 ,null,null,40,aLMExpo),
+	format('Fighter',6,1,100,1000000 ,1250 ,null,null,60,aLMExpo),
+	format('Bomber',5,1,120,1.2000000 ,1500 ,null,null,72,aLMExpo),
+	format('Varitek',6,1,100,1.5000000 ,1800 ,null,null,80,aLMExpo),
+	
+	format('Scout',20,2,150,250000 ,200 ,100,null,50,aLevelMultRamp),
+	format('Corvette',16,3,200,500000 ,600 ,200,null,60,aLevelMultRamp),
+	format('Freighter',10,5,500,1000000 ,1000 ,5000,null,80,aLevelMultRamp),
+	format('Frigate',15,4,400,1.5000000 ,1500 ,2000,2,80,aLevelMultRamp),
+	format('Destroyer',15,4,500,4000000 ,4500 ,400,null,100,aLevelMultRamp),
+	format('Carrier',12,6,1200,8000000 ,8000 ,1000,50,250,aLevelMultRamp),
+	format('Cruiser',12,8,1500,15000000 ,16000 ,600,2,300,aLevelMultRamp),
+	format('Battleship',10,10,5000,50000000 ,62000 ,1000,5,500,aLevelMultRamp),
+	format('Dreadnought',10,12,6000,80000000 ,100000 ,1000,5,600,aLevelMultRamp),
+	format('Monolith',10,20,25000,250000000 ,325000 ,10000,20,1000,aLevelMultRamp),
+	
+	format('Fortification',null,4,300,50000 ,25 ,null,null,20,aLMExpo),
+	format('Rail Gun',null,1,200,250000 ,125 ,null,null,32,aLMExpo),
+	format('Missile Turret',null,1,200,300000 ,150 ,null,null,40,aLMExpo),
+	format('Ion Cannon',null,2,250,500000 ,250 ,null,null,60,aLMExpo),
+	format('Shields',null,4,300,100000 ,50 ,null,null,80,aLMExpo),
+	format('Military Base',null,2,500,100000 ,100 ,null,null,100,aLMExpo),
+	format('Shipyard',null,2,800,150000 ,150 ,null,null,140,aLMExpo),
+	
+	format('struct',null,2,800,150000 ,150 ,null,null,140,aLMExpo),
+];
+
+var aCombat = [
+	[5,5,5,5,2,3,5,2,1,2,3,3,2,2,2,2,2,2,2,2,5,5,5,5,5,5,5,5],
+	[20,25,50,20,10,15,5,2,2,2,8,8,5,4,4,4,4,3,4,4,10,15,15,10,15,10,10,20],
+	[10,20,20,10,10,10,10,2,2,4,8,8,8,8,8,8,8,6,8,8,100,100,100,100,100,120,120,120],
+	[50,50,50,40,15,20,50,2,3,15,5,5,4,4,4,4,4,3,4,4,10,20,20,25,10,10,10,20],
+	[80,30,30,80,50,50,90,2,1,2,2,2,2,2,2,2,2,2,2,2,30,50,50,50,25,30,30,50],
+	[80,60,50,70,35,40,70,10,5,10,15,15,10,10,10,10,10,8,10,10,40,60,60,60,50,40,40,80],
+	[100,160,120,80,120,100,120,20,30,20,10,12,15,15,15,20,20,15,20,20,100,100,100,100,40,100,100,100],
+	[50,30,30,40,30,35,60,30,120,25,50,40,30,30,25,20,20,15,20,20,15,25,25,25,10,15,15,30],
+	[50,70,60,50,90,90,100,10,10,8,8,8,50,50,50,100,100,80,100,100,30,60,60,70,15,30,30,100],
+	[45,40,40,60,35,40,80,70,100,25,50,40,25,25,20,15,15,12,15,15,20,40,40,40,40,20,20,40],
+	[30,30,15,15,15,15,22,20,60,15,30,20,10,10,10,10,10,8,10,10,30,15,15,15,7,15,15,30],
+	[60,45,30,60,30,30,60,50,80,40,60,50,35,35,25,25,25,20,25,25,37,30,30,30,7,15,15,37],
+	[7,7,7,7,6,6,7,10,15,10,15,15,10,10,8,10,8,6,10,10,15,7,7,7,7,7,7,7],
+	[15,15,15,15,15,15,15,30,35,25,40,40,45,45,45,40,30,30,30,30,37,22,22,22,7,22,22,15],
+	[45,45,45,45,45,45,45,100,50,90,70,150,100,100,100,100,60,50,60,60,75,45,45,45,7,45,45,15],
+	[15,15,15,15,15,15,15,50,40,35,30,30,20,20,20,20,20,15,20,20,15,15,15,15,7,15,15,7],
+	[120,120,90,120,120,120,120,200,100,180,200,400,600,600,500,600,600,500,600,600,240,100,100,100,20,80,80,100],
+	[180,180,150,180,210,210,210,200,100,180,240,240,1000,1000,1000,1200,1200,1000,1200,1200,280,200,200,200,20,140,140,160],
+	[300,180,150,180,210,210,210,100,20,50,100,100,1600,1600,1000,2000,2000,1800,2000,2000,400,400,400,400,40,240,240,300],
+	[2400,2100,900,2400,3000,2400,3000,200,100,180,200,200,1600,1600,1600,2000,2000,1800,2000,2000,2400,3600,3600,3600,300,2400,2400,1500],
+	[5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,null,null,null,null,null,null,null,null],
+	[80,40,40,80,100,100,100,20,20,20,20,20,25,25,25,30,30,25,30,30,null,null,null,null,null,null,null,null],
+	[50,70,70,20,20,20,20,100,100,90,100,100,10,10,10,10,5,5,5,5,null,null,null,null,null,null,null,null],
+	[null,null,null,null,null,null,null,20,30,20,30,40,250,250,250,250,250,250,250,250,null,null,null,null,null,null,null,null],
+	[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+	[10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,null,null,null,null,null,null,null,null],
+	[5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,null,null,null,null,null,null,null,null],
+	[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+];
+
+
+var Combat = function( aAttacker, aDefender, iTurn ) {
+	this._aAttacker = aAttacker;
+	this._aDefender = aDefender;
+	this._aAttackerLife = null;
+	this._aDefenderLife = null;
+	this._iTurn = (iTurn==null)? 1 : iTurn;
+};
+Combat.prototype = {
+	getAttacker: function() {
+		return this._aAttacker;
+	},
+	getDefender: function() {
+		return this._aDefender;
+	},
+	_process: function() {
+		this._aAttackerLife = this._life_init(this._aAttacker);
+		this._aDefenderLife = this._life_init(this._aDefender);
+		
+		for( var i = 0; i<this._iTurn; i++ ) {
+			this._aAttackerLife = this._getDamage( this._aDefender, this._aAttacker, this._aDefenderLife, this._aAttackerLife );
+			this._aDefenderLife = this._getDamage( this._aAttacker, this._aDefender, this._aAttackerLife, this._aDefenderLife );
+		}
+		
+	},
+	_life_init: function(aUnit) {
+		var aLife = [];
+		for( var i = 0; i<aUnit.length; i++ ) {
+			var oUnitType = aUnitType[ aUnit[i].type ];
+			aLife[i] = oUnitType.hit * oUnitType.lvlMult[ aUnit[i].level ];
+		}
+		return aLife;
+	},
+	_getDamage: function( aDamager, aDamaged, aLifeDamager, aLifeDamaged ) {
+		// Init life
+		var aLife = aLifeDamaged==null ? [] : aLifeDamaged;
+		
+		
+		// Get total size
+		var iSizeTotal = 0;
+		for( var i = 0; i<aDamaged.length; i++ ) {
+			iSizeTotal += aUnitType[ aDamaged[i].type ].size * aDamaged[i].getLvlMult();
+		}
+		
+		for( var i = 0; i<aDamaged.length; i++ ) {
+			var oDamagedType = aUnitType[ aDamaged[i].type ];
+			
+			for( var j = 0; j<aDamager.length; j++ ) {
+				if( aLifeDamager[j] <= 0 )
+					continue;
+				var oDamagerType = aUnitType[ aDamager[j].type ];
+				aLife[i] -= aCombat[ aDamager[j].type ][ aDamaged[i].type ] * 
+					aDamager[j].getLvlMult() * 
+					( (oDamagedType.size * aDamaged[i].getLvlMult() ) / iSizeTotal );
+			}
+		}
+		return aLife;
+	},
+	getAttackerLife: function() {
+		if( this._aAttackerLife == null )
+			this._process();
+	
+		return this._aAttackerLife;
+	},
+	getDefenderLife: function() {
+		if( this._aDefenderLife == null )
+			this._process();
+	
+		return this._aDefenderLife;
+	}
+}
+
+
+//_____________________________________________________________________________
+function printtable(){
+	// print table
+	var sPrint = '';
+	sPrint += '<tr><th>defender<br>attacker (size)</th>';
+	for( var i = 0; i<aUnitType.length; i++ ) {
+		sPrint += '<th>'+aUnitType[i].name.substring(0,3);+'</th>';
+	}
+	sPrint += '</tr>';
+	$('#combat thead').html(sPrint);
+	
+	
+	
+	sPrint = '';
+	for( var i = 0; i<aUnitType.length; i++ ) {
+		sPrint += '<tr class="'+(aUnitType[i].lvlMult == aLMExpo?'':'highlight')+'">';
+		sPrint += '<td>'+aUnitType[i].name+' ('+aUnitType[i].size+')</td>';
+		for( var j = 0; j<aUnitType.length; j++ ) {
+			var percent = Math.round(aCombat[i][j]/aUnitType[j].hit *100)
+			sPrint += '<td style="color:hsl('+(100-Math.min(100,percent))+',50%,50%)">'+percent+'</td>';
+		}
+		sPrint += '</tr>';
+		
+	}
+	$('#combat tbody').html(sPrint);
+	
+};
+printtable();
+
+function printunitlist( $elem, aUnit, sType ) {
+	// print table
+	var sPrint = '';
+	//'<h3>'+sType[0].toUpperCase() + sType.substring(1)+'</h3><ul class="list-group">';
+	
+	for( var i = 0; i<aUnit.length; i++ ) {
+		var iUnitId = aUnit[i].type;
+		sPrint += '<li class="list-group-item clearfix"><div class="row">';
+		sPrint += '<div class="col-xs-6"><span>'+aUnitType[iUnitId].name+'</span></div>';
+		sPrint += '<div class="col-xs-3"><input class="form-control" type="number" data-action="unitLevel_update" data-unitlist-type="'+sType+'" data-unit-id="'+i+'" value="'+aUnit[i].level+'" min="1" max="10" /></div>';
+		sPrint += '<div class="col-xs-3"><button class="btn btn-xs btn-danger pull-right" type="button" data-action="unitlist_remove" data-unitlist-type="'+sType+'" data-param="'+i+'">-</button></div>';
+		sPrint += '</div></li>';
+	}
+	sPrint += '';
+	$elem.html(sPrint);
+};
+
+function printtest() {
+	// print table
+	var sPrint = '';
+	for( var i = 0; i<aUnitType.length; i++ ) {
+		sPrint += '<option value="'+i+'">';
+		sPrint += aUnitType[i].name;
+		sPrint += '</option>';
+		
+	}
+	$('.js-select-unittype').html(sPrint);
+}printtest();
+
+function printCombatUnitList( aUnit, aLife ) {
+	var sPrint = '';
+	for( var i = 0; i<aUnit.length; i++ ) {
+		var oUnitType = aUnitType[aUnit[i].type];
+		sPrint += '<div>';
+		sPrint += '<span>'+oUnitType.name+'</span>';
+		var percent = Math.max(0, ( aLife[i] / (oUnitType.hit * oUnitType.lvlMult[ aUnit[i].level ]) )*100 );
+		sPrint += '<div class="progress"><div class="progress-bar" role="progressbar" aria-valuenow="60" aria-valuemin="0" aria-valuemax="100" style="width: '+percent+'%;">';
+		sPrint += Math.ceil(aLife[i])+' ('+Math.ceil(percent)+'%)</div></div>';
+		sPrint += '</div>';
+		
+	}
+	return sPrint;
+}
+function printcmbat( oCombat ) {
+	// print table
+	var sPrint = '<div class="row"><div class="col-xs-6">';
+	sPrint += printCombatUnitList( oCombat.getAttacker(), oCombat.getAttackerLife());
+	sPrint += '</div><div class="col-xs-6">';
+	sPrint += printCombatUnitList( oCombat.getDefender(), oCombat.getDefenderLife());
+	sPrint += '</div>';
+	$('#combat-result').html(sPrint);
+}
+
+function printUnitList() {
+	printunitlist($('#attacker'),aAttacker,'attacker');
+	printunitlist($('#defender'),aDefender,'defender');
+	printcmbat(new Combat( aAttacker, aDefender, iTurn ));
+}
+printUnitList();
+
+//_____________________________________________________________________________
+//	Action
+
+$('[data-action="unitlist_add"]').click(function(){
+	var _this = this;
+	
+	var iUnitTypeId = $('#'+$(_this).data('unitlist-type')+'_select').val();
+	if( $(_this).data('unitlist-type') == 'attacker' )
+		aAttacker.push( new Unit( iUnitTypeId, 1 ) );
+	else
+		aDefender.push( new Unit( iUnitTypeId, 1 ) );
+	
+	printUnitList();
+});
+$(document).click(function(event){
+	_this = event.target;
+	
+	if( $(_this).data('action') != 'unitlist_remove' )
+		return;
+	
+	if( $(_this).data('unitlist-type') == 'attacker' )
+		aAttacker.splice($(_this).data('param'), 1);
+	else
+		aDefender.splice($(_this).data('param'), 1);
+	
+	printUnitList();
+});
+
+/**
+ * Update level
+ */
+$(document).bind('keyup mouseup', function (event) {
+	
+	_this = event.target;
+	
+	if( $(_this).data('action') != 'unitLevel_update' )
+		return;
+	
+	var sUnitListType = $(_this).data('unitlist-type');
+	var iUniId = $(_this).data('unit-id');
+	var iLevel = Math.max(1,parseInt($(_this).val()));
+	
+	if( sUnitListType == 'attacker' )
+		aAttacker[iUniId].level = iLevel;
+	else
+		aDefender[iUniId].level = iLevel;
+	
+	
+	printUnitList();
+});
+
+/**
+ * Update Combat turn
+ */
+$('#control-turn').bind('keyup mouseup', function () {
+	iTurn = Math.max(1,parseInt($(this).val()));
+    printUnitList();          
+});
+
+
+</script>
+
+</body>
+</html>
