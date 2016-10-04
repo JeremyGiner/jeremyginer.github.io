@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="">
+	
+	<title>BotG production planifier</title>
+	<!-- Latest compiled and minified CSS -->
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+	<style>
+		
+	</style>
+</head>
+<body>
+<header class="container">
+	<h1>BotG production planifier</h1>
+</header>
+<section class="container">
+<div class="row">
+	<div class="col-xs-12 col-sm-6">
+		<h3>Ressource filter</h3>
+		<form method="GET">
+		<div class="row">
+			<div class="col-xs-6">
+				<ul class="list-group">
+				<li class="list-group-item">
+					Fresh Water: 
+					<span class="pull-right">
+						<img title="Water" src="http://baronsofthegalaxy.com/images/icons/icon_Water_16.gif">
+						<input name="res_water" type="checkbox">
+					</span>
+				</li>
+				<li class="list-group-item">
+					Fields:
+					<span class="pull-right">
+						<img title="Field" src="http://baronsofthegalaxy.com/images/icons/icon_Field_16.gif">
+						<input name="res_cotton" type="checkbox">
+					</span>
+				</li>
+				<li class="list-group-item">
+					Pasture:
+					<span class="pull-right">
+						<img src="http://baronsofthegalaxy.com/images/icons/icon_Pasture_16.gif">
+						<!--<input name="res_pasture" type="checkbox">-->
+					</span>
+				</li>
+				<li class="list-group-item">
+					Basic Wood:
+					<span class="pull-right">
+						<img title="Basic Wood" src="http://baronsofthegalaxy.com/images/icons/icon_BasicWOod_16.gif">
+						<input name="res_basic_wood" type="checkbox">
+					</span>
+				</li>
+				<li class="list-group-item">
+					Rare Wood:
+					<span class="pull-right">
+						<img title="Rare Wood" src="http://baronsofthegalaxy.com/images/icons/icon_RareWood_16.gif">
+						<input name="res_rare_wood" type="checkbox">
+					</span>
+				</li>
+				<li class="list-group-item">
+					Exotic Plant:
+					<span class="pull-right">
+						<img title="Rare Plants" src="http://baronsofthegalaxy.com/images/icons/icon_RarePlants_16.gif">
+						<input name="res_exotic_plant" type="checkbox">
+					</span>
+				</li>
+				<li class="list-group-item">
+					Basic Min.:
+					<span class="pull-right">
+						<img title="Basic Minerals" src="http://baronsofthegalaxy.com/images/icons/icon_BasicMineral_16.gif">
+						<input name="res_basic_mineral" type="checkbox">
+					</span>
+				</li>
+				<li class="list-group-item">
+					Prec. Min.:
+					<span class="pull-right">
+						<img title="Precious Minerals" src="http://baronsofthegalaxy.com/images/icons/icon_PrecMineral_16.gif">
+						<input name="res_precious_mineral" type="checkbox">
+					</span>
+				</li>
+				<li class="list-group-item">
+					Exotic Min.:
+					<span class="pull-right">
+						<img title="Exotic Minerals" src="http://baronsofthegalaxy.com/images/icons/icon_ExoticMineral_16.gif">
+						<input name="res_exotic_mineral" type="checkbox">
+					</span>
+				</li>
+				</ul>
+			</div>
+			<div class="col-xs-6">
+				<ul class="list-group">
+				<li class="list-group-item">
+					Basic Metal:
+					<span class="pull-right">
+						<img title="Basic Metal" src="http://baronsofthegalaxy.com/images/icons/icon_BasicMetal_16.gif">
+						<input name="res_basic_metal" type="checkbox">
+					</span>
+				</li>
+				<li class="list-group-item">
+					Prec. Metal:
+					<span class="pull-right">
+					<img title="Precious Metal" src="http://baronsofthegalaxy.com/images/icons/icon_PrecMetal_16.gif">
+					<input name="res_precious_metal" type="checkbox">
+					</span>
+				</li>
+				<li class="list-group-item">
+					Radioactives:
+					<span class="pull-right">
+					<img title="Radioactive Metal" src="http://baronsofthegalaxy.com/images/icons/icon_Radioactives_16.gif">
+					<input name="res_radioactive_metal" type="checkbox">
+					</span>
+				</li>
+				<li class="list-group-item">
+					Exotic Metal:
+					<span class="pull-right">
+					<img title="Exotic Metal" src="http://baronsofthegalaxy.com/images/icons/icon_ExoticMetal_16.gif">
+					<input name="res_exotic_metal" type="checkbox">
+					</span>
+				</li>
+				<li class="list-group-item">
+					Basic Chem.:
+					<span class="pull-right">
+					<img title="Basic Chemical" src="http://baronsofthegalaxy.com/images/icons/icon_BasicCHem_16.gif">
+					<input name="res_basic_chemical" type="checkbox">
+					</span>
+				</li>
+				<li class="list-group-item">
+					Ind. Chem.:
+					<span class="pull-right">
+					<img title="Industrial Chemical" src="http://baronsofthegalaxy.com/images/icons/icon_IndChem_16.gif">
+					<input name="res_industrial_chemical" type="checkbox">
+					</span>
+				</li>
+				<li class="list-group-item">
+					Rare Chem.:
+					<span class="pull-right">
+					<img title="Rare Chemical" src="http://baronsofthegalaxy.com/images/icons/icon_RareChem_16.gif">
+					<input name="res_rare_chemical" type="checkbox">
+					</span>
+				</li>
+				<li class="list-group-item">
+					Exotic Chem.:
+					<span class="pull-right">
+					<img title="Exotic Chemical" src="http://baronsofthegalaxy.com/images/icons/icon_ExoticChem_16.gif">
+					<input name="res_exotic_chemical" type="checkbox">
+					</span>
+				</li>
+				<li class="list-group-item">
+					Artifacts:
+					<span class="pull-right">
+					<img title="Artifact" src="http://baronsofthegalaxy.com/images/icons/icon_Artifacts_16.gif">
+					<input name="res_artifact" type="checkbox">
+					</span>
+				 </li>
+				 </ul>
+			</div>
+		</div>
+		<button class="btn btn-primary" type="submit">Filter</button>
+		</form>
+	</div>
+	<div class="col-xs-12 col-sm-6">
+		<h3>Prod</h3>
+		<ul id="prod" class="list-group"></ul>
+	</div>
+</div>
+</section>
+
+<section class="container" style="overflow:hidden;">
+<table id="combat" class="table table-striped">
+<thead>
+</thead>
+<tbody>
+</tbody>
+</table>
+</section>
+	
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/purl/2.3.1/purl.js"></script>
+<!-- Latest compiled and minified JavaScript -->
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+<script>
+
+String.prototype.capitalizeFirstLetter = function() {
+    return this.charAt(0).toUpperCase() + this.slice(1);
+}
+var Prod = function( sName, aInput ) {
+	this._sName = sName;
+	this._aInput = aInput;
+	
+	this._aTierCache = null;
+	this._aTotalCache = null;
+};
+Prod.prototype = {
+	getName: function() {
+		return this._sName;
+	},
+	getTier: function() {
+		if( this._aTierCache == null )
+			this.getTotal();
+		return this._aTierCache;
+	},
+	getTotal: function() { 
+		if( this._aTotalCache == null ) {
+			//Update calculable
+			this._aTierCache = 1;
+			var aResult = [];
+			for(var i=0; i<this._aInput.length; i++) {
+				var oInput = this._aInput[i];
+				
+				var iQuantity = oInput[0];
+				var sResName = oInput[1];
+				
+				if( aRessource.indexOf(sResName) != -1 ) {
+					// Case t0 ressourc
+					aResult = this._resultAdd( aResult, sResName, iQuantity );
+				} else {
+					// case t1 ressrouce
+					
+					this._aTierCache = 2;
+					if( !aProd.hasOwnProperty(sResName) )
+						throw('!!!');
+					
+					var aTotal = aProd[sResName].getTotal();
+					for(var j=0;j<aTotal.length;j++) {
+						aResult = this._resultAdd( aResult, aTotal[j][1], aTotal[j][0]*iQuantity );
+					}
+				}
+			}
+			this._aTotalCache = aResult;
+		}
+		
+		return this._aTotalCache;
+	},
+	_resultAdd: function( aPile, sResName, iQuantity ) {
+		// Case t0 ressource
+		var iIndex = -1;
+		for( var i=0;i<aPile.length;i++)
+			if( aPile[i][1] == sResName ) 
+				iIndex = i;
+		
+		if(	iIndex == -1 )
+			aPile.push([iQuantity,sResName]);
+		else
+			aPile[iIndex][0] += iQuantity;
+		return aPile;
+	}
+};
+
+function validate_prodByRes( oProd, aRessource ) {
+	var aTotal = oProd.getTotal();
+	for( var j = 0; j<aTotal.length; j++ ) {
+		if( aRessource.indexOf( aTotal[j][1] ) == -1 )
+			return false;
+	}
+	return true;
+}
+
+//_____________________________________________________________________________
+//	Global
+var aRessource = [
+	'Fresh Water',
+	'Field',
+	'Cotton',
+	'Pasture',
+	'Basic Wood',
+	'Rare Wood',
+	'Exotic Plant',
+	'Basic Mineral',
+	'Precious Mineral',
+	'Exotic Mineral',
+	'Basic Metal',
+	'Precious Metal',
+	'Radioactive Metal',
+	'Exotic Metal',
+	'Basic Chemical',
+	'Industrial Chemical',
+	'Rare Chemical',
+	'Exotic Chemical',
+	'Artifact'
+];
+var aProd = {
+	'Basic Polymer': new Prod( 'Basic Polymer', [[2,'Basic Mineral'], [7,'Basic Chemical'], [1,'Industrial Chemical']] ),
+	'Industrial Polymer': new Prod( 'Industrial Polymer',[[2,'Precious Mineral'],[1,'Precious Metal'],[7,'Industrial Chemical']] ),
+	'Exotic Polymer': new Prod('Exotic Polymer',[[1,'Exotic Metal'], [2,'Industrial Chemical'], [7,'Exotic Chemical']]),
+	
+	'Basic Ceramic': new Prod('Basic Ceramic',[[5,'Basic Mineral'], [3,'Basic Metal'], [2,'Basic Chemical']]),
+	'Advanced Ceramic': new Prod('Advanced Ceramic',[[5,'Precious Mineral'], [3,'Basic Chemical'], [2,'Industrial Chemical']]),
+	'Exotic Ceramic': new Prod('Exotic Ceramic',[[3,'Precious Mineral'], [3,'Exotic Chemical'], [4,'Exotic Mineral']]),
+	
+	'Basic Electronic': new Prod('Basic Electronic',[[3,'Basic Mineral'], [6,'Basic Metal'], [1,'Basic Chemical']]),
+	'Advanced Electronic': new Prod('Advanced Electronic',[[3,'Precious Mineral'], [5,'Precious Metal'], [2,'Rare Chemical']]),
+	'Experimental Electronic': new Prod('Experimental Electronic',[[1,'Exotic Metal'], [4,'Rare Chemical'], [5,'Exotic Mineral']]),
+	
+	'Basic Fabric': new Prod('Basic Fabric',[[3,'Basic Chemical'], [6,'Industrial Chemical'], [1,'Cotton']]),
+	'Rare Fabric': new Prod('Rare Fabric',[[1,'Precious Metal'], [8,'Rare Chemical'], [1,'Cotton']]),
+	'Exotic Fabric': new Prod('Exotic Fabric',[[1,'Exotic Metal'], [8,'Exotic Chemical'], [1,'Exotic Mineral']]),
+	
+	'Basic Alloy': new Prod('Basic Alloy',[[3,'Basic Mineral'], [6,'Basic Metal'], [1,'Basic Chemical']]),
+	'Advanced Alloy': new Prod('Advanced Alloy',[[1,'Precious Mineral'], [6,'Precious Metal'], [3,'Radioactive Metal']]),
+	'Exotic Alloy': new Prod('Exotic Alloy',[[1,'Radioactive Metal'], [6,'Exotic Metal'], [3,'Exotic Mineral']]),
+	
+	'Basic Material': new Prod('Basic Material',[[6,'Basic Wood'], [1,'Basic Mineral'], [3,'Basic Metal']]),
+	'Heavy Material': new Prod('Heavy Material',[[3,'Basic Wood'], [5,'Basic Mineral'], [1,'Rare Chemical']]),
+	'Complex Material': new Prod('Complex Material',[[1,'Basic Wood'], [6,'Precious Mineral'], [3,'Basic Chemical']]),
+	
+	'Small Power Cell': new Prod('Small Power Cell',[[1,'Basic Metal'], [6,'Radioactive Metal'], [3,'Rare Chemical']]),
+	'Large Power Cell': new Prod('Large Power Cell',[[6,'Radioactive Metal'], [3,'Industrial Chemical'], [1,'Rare Chemical']]),
+	'Experimental Power Cell': new Prod('Experimental Power Cell',[[6,'Radioactive Metal'], [3,'Exotic Metal'], [1,'Exotic Chemical']]),
+	
+	'Small Appliance': new Prod('Small Appliance',[[2,'Basic Polymer'], [3,'Basic Electronic'], [5,'Basic Alloy']]),
+	'Laser': new Prod('Laser',[[3,'Basic Ceramic'], [5,'Basic Electronic'], [2,'Advanced Electronic']]),
+	'Cellphone': new Prod('Cellphone',[[5,'Basic Polymer'], [3,'Industrial Polymer'], [2,'Advanced Electronic']]),
+	'Sound System': new Prod('Sound System',[[5,'Basic Ceramic'], [2,'Basic Electronic'], [3,'Advanced Alloy']]),
+	'PDA': new Prod('PDA',[[5,'Basic Polymer'], [2,'Basic Electronic'], [3,'Advanced Electronic']]),
+	'Personal Computer': new Prod('Personal Computer',[[2,'Industrial Polymer'], [3,'Basic Electronic'], [5,'Advanced Electronic']]),
+	'Viewscreen': new Prod('Viewscreen',[[3,'Industrial Polymer'], [2,'Basic Electronic'], [5,'Advanced Electronic']]),
+	'Large Appliance': new Prod('Large Appliance',[[2,'Advanced Ceramic'], [3,'Advanced Electronic'], [5,'Advanced Alloy']]),
+	'Cyberwear': new Prod('Cyberwear',[[5,'Experimental Electronic'], [2,'Advanced Alloy'], [3,'Exotic Alloy']]),
+	'Personal Droid': new Prod('Personal Droid',[[3,'Experimental Electronic'], [2,'Experimental Power Cell'], [5,'Exotic Alloy']]),
+	'Basic Shoe': new Prod('Basic Shoe',[[4,'Basic Polymer'], [1,'Basic Ceramic'], [5,'Basic Fabric']]),
+	'Basic Clothing': new Prod('Basic Clothing',[[2,'Basic Metal'], [1,'Basic Ceramic'], [8,'Basic Fabric']]),
+	'Sunglasse': new Prod('Sunglasse',[[8,'Basic Polymer'], [1,'Industrial Polymer'], [1,'Basic Alloy']]),
+	'Accessorie': new Prod('Accessorie',[[4,'Basic Polymer'], [2,'Basic Ceramic'], [4,'Basic Alloy']]),
+	'Work Clothing': new Prod('Work Clothing',[[4,'Industrial Polymer'], [5,'Basic Fabric'], [1,'Basic Alloy']]),
+	'Industrial Clothing': new Prod('Industrial Clothing',[[1,'Industrial Polymer'], [5,'Basic Fabric'], [4,'Advanced Alloy']]),
+	'Simple Jewelry': new Prod('Simple Jewelry',[[4,'Precious Metal'], [4,'Basic Polymer'], [4,'Basic Alloy']]),
+	'Fancy Shoe': new Prod('Fancy Shoe',[[2,'Basic Metal'], [4,'Industrial Polymer'], [5,'Rare Fabric']]),
+	'Fashionable Clothing': new Prod('Fashionable Clothing',[[1,'Exotic Polymer'], [1,'Exotic Ceramic'], [8,'Exotic Fabric']]),
+	'Expensive Jewelry': new Prod('Expensive Jewelry',[[4,'Precious Metal'], [12,'Exotic Metal'], [4,'Exotic Alloy']]),
+	'Plastic Toy': new Prod('Plastic Toy',[[16,'Basic Chemical'], [1,'Basic Polymer'], [1,'Basic Alloy']]),
+	'Stuffed Animal': new Prod('Stuffed Animal',[[1,'Basic Polymer'], [8,'Basic Fabric'], [1,'Basic Alloy']]),
+	'Board Game': new Prod('Board Game',[[16,'Basic Wood'], [2,'Basic Metal'], [1,'Basic Polymer']]),
+	'Music Holodisc': new Prod('Music Holodisc',[[8,'Basic Polymer'], [1,'Industrial Polymer'], [1,'Basic Electronic']]),
+	'Hover Board': new Prod('Hover Board',[[8,'Industrial Polymer'], [8,'Basic Ceramic'], [1,'Advanced Electronic']]),
+	'Video Game': new Prod('Video Game',[[6,'Basic Polymer'], [3,'Basic Electronic'], [1,'Advanced Electronic']]),
+	'Adult Toy': new Prod('Adult Toy',[[6,'Industrial Polymer'], [2,'Basic Electronic'], [2,'Basic Alloy']]),
+	'Sports Equipment': new Prod('Sports Equipment',[[2,'Industrial Polymer'], [6,'Basic Alloy'], [2,'Advanced Alloy']]),
+	'Electronic Toy': new Prod('Electronic Toy',[[2,'Basic Polymer'], [5,'Basic Electronic'], [3,'Advanced Electronic']]),
+	'Simsense Chip': new Prod('Simsense Chip',[[4,'Advanced Electronic'], [5,'Experimental Electronic'], [1,'Advanced Alloy']]),
+	
+	'Illegal Firearm': new Prod('Illegal Firearm',[[1,'Basic Ceramic'], [2,'Advanced Ceramic'], [7,'Basic Alloy']]),
+	'Hardcore Narcotic': new Prod('Hardcore Narcotic',[[2,'Exotic Plant'], [8,'Industrial Chemical'], [10,'Rare Chemical']]),
+	'Illegal Cyberwear': new Prod('Illegal Cyberwear',[[6,'Basic Electronic'], [2,'Small Power Cell'], [2,'Basic Alloy']]),
+	'Hacking Device': new Prod('Hacking Device',[[2,'Basic Polymer'], [6,'Advanced Electronic'], [2,'Small Power Cell']]),
+	'Simple Narcotic': new Prod('Simple Narcotic',[[12,'Exotic Plant'], [4,'Basic Chemical'], [4,'Industrial Chemical']]),
+	'Dangerous Pet': new Prod('Dangerous Pet',[[4,'Advanced Ceramic'], [1,'Experimental Electronic'], [5,'Advanced Alloy']]),
+	'Recreational Narcotic': new Prod('Recreational Narcotic',[[14,'Exotic Plant'], [2,'Basic Chemical'], [4,'Basic Chemical']]),
+	'Exotic Narcotic': new Prod('Exotic Narcotic',[[16,'Exotic Plant'], [2,'Radioactive Metal'], [2,'Exotic Chemical']]),
+	'Counterfeit Artwork': new Prod('Counterfeit Artwork',[[8,'Rare Wood'], [6,'Radioactive Metal'], [6,'Exotic Metal']]),
+	'Military Cyborg': new Prod('Military Cyborg',[[2,'Experimental Electronic'], [1,'Experimental Power Cell'], [7,'Exotic Alloy']]),
+	
+	'Manufacturing Tool': new Prod('Manufacturing Tool',[[4,'Basic Metal'], [2,'Basic Ceramic'], [6,'Basic Alloy']]),
+	'Industrial Laser': new Prod('Industrial Laser',[[6,'Advanced Ceramic'], [2,'Advanced Electronic'], [2,'Basic Alloy']]),
+	'Industrial Machinery': new Prod('Industrial Machinery',[[2,'Basic Ceramic'], [2,'Advanced Ceramic'], [6,'Basic Alloy']]),
+	'Industrial Robot': new Prod('Industrial Robot',[[2,'Advanced Ceramic'], [2,'Basic Electronic'], [6,'Advanced Alloy']]),
+	'Industrial Computer': new Prod('Industrial Computer',[[2,'Basic Electronic'], [6,'Advanced Electronic'], [2,'Experimental Electronic']]),
+	'Hi-Tech Tool': new Prod('Hi-Tech Tool',[[6,'Advanced Ceramic'], [2,'Exotic Ceramic'], [2,'Advanced Electronic']]),
+	'Hi-Tech Laser': new Prod('Hi-Tech Laser',[[6,'Advanced Ceramic'], [2,'Experimental Electronic'], [2,'Advanced Alloy']]),
+	'Hi-Tech Machinery': new Prod('Hi-Tech Machinery',[[2,'Advanced Ceramic'], [2,'Exotic Ceramic'], [6,'Advanced Alloy']]),
+	'Hi-Tech Robot': new Prod('Hi-Tech Robot',[[2,'Exotic Ceramic'], [2,'Advanced Electronic'], [6,'Exotic Alloy']]),
+	'Supercomputer': new Prod('Supercomputer',[[6,'Experimental Electronic'], [2,'Experimental Power Cell'], [2,'Exotic Alloy']]),
+	
+	'Carpeting': new Prod('Carpeting',[[4,'Basic Chemical'], [4,'Basic Polymer'], [4,'Basic Fabric']]),
+	'Basic Furniture': new Prod('Basic Furniture',[[8,'Basic Wood'], [2,'Advanced Ceramic'], [4,'Basic Fabric']]),
+	'Wood Decor': new Prod('Wood Decor',[[8,'Basic Wood'], [8,'Rare Wood'], [2,'Basic Alloy']]),
+	'Bedding': new Prod('Bedding',[[4,'Basic Metal'], [4,'Basic Fabric'], [4,'Rare Fabric']]),
+	'Tiling': new Prod('Tiling',[[4,'Basic Ceramic'], [2,'Advanced Ceramic'], [4,'Basic Material']]),
+	'Stone Decor': new Prod('Stone Decor',[[8,'Basic Mineral'], [8,'Precious Mineral'], [4,'Basic Metal']]),
+	'Fancy Rug': new Prod('Fancy Rug',[[2,'Rare Chemical'], [4,'Rare Fabric'], [4,'Exotic Fabric']]),
+	'Metal Decor': new Prod('Metal Decor',[[2,'Advanced Ceramic'], [4,'Basic Alloy'], [4,'Advanced Alloy']]),
+	'Fancy Furniture': new Prod('Fancy Furniture',[[8,'Rare Wood'], [4,'Rare Fabric'], [2,'Basic Alloy']]),
+	'Exotic Decor': new Prod('Exotic Decor',[[4,'Rare Wood'], [8,'Exotic Plant'], [4,'Exotic Alloy']]),
+	
+	'Hover Bike': new Prod('Hover Bike',[[2,'Basic Polymer'], [2,'Basic Electronic'], [1,'Small Power Cell'], [5,'Basic Alloy']]),
+	'Light Truck': new Prod('Light Truck',[[2,'Basic Ceramic'], [2,'Basic Electronic'], [1,'Small Power Cell'], [5,'Basic Alloy']]),
+	'Construction Vehicle': new Prod('Construction Vehicle',[[2,'Basic Ceramic'], [2,'Basic Electronic'], [1,'Large Power Cell'], [5,'Advanced Alloy']]),
+	'Large Truck': new Prod('Large Truck',[[2,'Advanced Ceramic'], [2,'Advanced Electronic'], [1,'Large Power Cell'], [5,'Advanced Alloy']]),
+	'Economy Car': new Prod('Economy Car',[[3,'Exotic Polymer'], [2,'Advanced Electronic'], [1,'Large Power Cell'], [4,'Advanced Alloy']]),
+	'Sports Car': new Prod('Sports Car',[[3,'Advanced Ceramic'], [1,'Experimental Electronic'], [2,'Large Power Cell'], [4,'Advanced Alloy']]),
+	'Luxury Car': new Prod('Luxury Car',[[2,'Advanced Electronic'], [2,'Rare Fabric'], [1,'Large Power Cell'], [5,'Advanced Alloy']]),
+	'Supercar': new Prod('Supercar',[[2,'Advanced Ceramic'], [1,'Experimental Electronic'], [2,'Experimental Power Cell'], [5,'Advanced Alloy']]),
+	'Personal Aircraft': new Prod('Personal Aircraft',[[3,'Exotic Polymer'], [2,'Advanced Electronic'], [1,'Experimental Power Cell'], [4,'Exotic Alloy']]),
+	'Personal Spacecraft': new Prod('Personal Spacecraft',[[3,'Exotic Ceramic'], [1,'Experimental Electronic'], [2,'Experimental Power Cell'], [4,'Exotic Alloy']]),
+	
+	'Cleaning Supplies': new Prod('Cleaning Supplies',[[4,'Basic Mineral'], [14,'Basic Chemical'], [2,'Industrial Chemical']]),
+	'Soap': new Prod('Soap',[[14,'Basic Mineral'], [4,'Basic Chemical'], [2,'Industrial Chemical']]),
+	'Pesticide': new Prod('Pesticide',[[2,'Basic Mineral'], [4,'Basic Chemical'], [14,'Industrial Chemical']]),
+	'Paint': new Prod('Paint',[[4,'Basic Mineral'], [2,'Basic Chemical'], [14,'Industrial Chemical']]),
+	'Cosmetic': new Prod('Cosmetic',[[2,'Exotic Plant'], [14,'Basic Mineral'], [4,'Basic Chemical']]),
+	'Rubber': new Prod('Rubber',[[2,'Basic Chemical'], [14,'Industrial Chemical'], [4,'Rare Chemical']]),
+	'Vitamin': new Prod('Vitamin',[[2,'Basic Mineral'], [14,'Industrial Chemical'], [4,'Rare Chemical']]),
+	'Pharmaceutical': new Prod('Pharmaceutical',[[14,'Exotic Plant'], [2,'Basic Chemical'], [4,'Exotic Chemical']]),
+	'Explosive': new Prod('Explosive',[[4,'Radioactive Metal'], [14,'Exotic Chemical'], [2,'Exotic Mineral']])//'': new Prod('',[[,''], [,''], [,'']]),
+};
+
+
+//_____________________________________________________________________________
+
+
+function printProdList( $elem, aProd ) {
+	
+	var sPrint = '';
+	
+	if( aProd.length == 0 )
+		sPrint = 'No production type found for this filter';
+	
+	for( var sName in aProd ) {
+		var oProd = aProd[sName];
+		var aTotal = oProd.getTotal();
+		
+		sPrint += '<li class="list-group-item clearfix"><div class="row">';
+		sPrint += '<div class="col-xs-12"><h4>'+oProd.getName()+' (T'+oProd.getTier()+')</h4></div>';
+		for( var j = 0; j<aTotal.length; j++ ) {
+			sPrint += '<div class="col-xs-6"><span>'+aTotal[j][1]+' '+aTotal[j][0]+'</span></div>';
+		}
+		sPrint += '</div></li>';
+	}
+	sPrint += '';
+	$elem.html(sPrint);
+};
+
+function parseAndStuff(aGETParam) {
+	var aResFilter = [];
+	for( var sName in aGETParam ) {
+		
+		if( !sName.startsWith('res_') )
+			continue;
+		
+		$('[name='+sName+']').attr('checked','checked');
+		
+		var a = sName.split('_').splice(1);
+		for( var i=0;i<a.length;i++)
+			a[i] = a[i].capitalizeFirstLetter();
+		var sResName = a.join(' ');
+		aResFilter.push(sResName);
+	}
+	return aResFilter;
+}
+var aResFilter = parseAndStuff( purl().param() );
+
+if( aResFilter.length == 0 )
+	aResFilter = parseAndStuff( purl('botg_prodplan.html?res_basic_mineral=on&res_basic_metal=on&res_basic_chemical=on').param() );
+
+	
+// Filter
+var aProdFiltered = [];
+for( var sName in aProd ) {
+	var oProd = aProd[sName];
+	
+	if( validate_prodByRes( oProd, aResFilter ) )
+		aProdFiltered.push( oProd );
+}
+	
+printProdList( $('#prod'), aProdFiltered );
+
+
+</script>
+
+</body>
+</html>
